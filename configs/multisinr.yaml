@@ -1,0 +1,101 @@
+experiment:
+  name: multisnr_semantic_faces_loop
+  output_dir: outputs/multisnr_semantic_faces
+
+base_config: configs/semantic_faces_snr20.yaml
+
+seed: 42
+
+device:
+  prefer_cuda: true
+
+signal:
+  snr_list: [0, 5, 10, 15, 20, 25, 30]
+  sample_rate: 1000000
+  num_symbols: 1024
+  modulation: semantic_jscc
+
+semantic:
+  enabled: true
+  source: olivetti_faces
+  image_size: 64
+  train_samples: 2048
+  val_samples: 256
+  eval_samples: 256
+  download_if_missing: true
+  data_home: outputs/semantic_faces_snr20/source_data
+  latent_dim: 256
+  conv_base_channels: 12
+  epochs: 100
+  batch_size: 64
+  lr: 0.0005
+  clean_loss_weight: 0.5
+  l1_loss_weight: 0.03
+  snr_jitter_db: 2.0
+  checkpoint: outputs/semantic_faces_snr20/checkpoints/semantic_jscc.pt
+
+data:
+  batch_size: 32
+  num_workers: 0
+  max_time_index: 100
+
+impairments:
+  num_tx: 6
+  gain_db_std: 1.0
+  gain_drift_db_per_step: 0.0
+  phase_rad_std: 0.2
+  phase_drift_rad_per_step: 0.0
+  cfo_hz_std: 100.0
+  cfo_drift_hz_per_step: 0.0
+  iq_gain_mismatch_db_std: 0.5
+  iq_phase_mismatch_rad_std: 0.05
+  dc_offset_std: 0.02
+
+teacher:
+  epochs: 20
+  batch_size: 96
+  lr: 0.001
+  num_steps_per_epoch: 80
+  hidden_channels: 48
+  num_blocks: 3
+  condition_dim: 16
+  max_residual_power_ratio: 0.1
+  lambda_align: 1.0
+  lambda_mean: 1.0
+  lambda_cov: 1.0
+  lambda_mmd: 1.0
+  lambda_evm: 5.0
+  lambda_softbit: 0.0
+  lambda_power: 10.0
+  mmd_sigmas: [0.5, 1.0, 2.0, 4.0, 8.0]
+
+compensation_dataset:
+  batch_size: 64
+  train_batches: 8
+  val_batches: 2
+  test_batches: 2
+  checkpoint: outputs/multisnr_semantic_faces/checkpoints/teacher_best.pt
+
+fixed_precomp:
+  max_residual_power_ratio: 0.1
+  checkpoint: outputs/multisnr_semantic_faces/checkpoints/teacher_best.pt
+
+multisnr_eval:
+  batch_size: 16
+  num_batches_per_snr: 6
+  quick_batches_per_snr: 1
+  eve_epochs: 20
+  quick_eve_epochs: 2
+  eve_batch_size: 64
+  train_ratio: 0.6
+  val_ratio: 0.2
+  checkpoint: outputs/multisnr_semantic_faces/checkpoints/teacher_best.pt
+
+eve:
+  epochs: 20
+  batch_size: 64
+  lr: 0.001
+  train_ratio: 0.6
+  val_ratio: 0.2
+  num_classes: 6
+  max_batches: null
